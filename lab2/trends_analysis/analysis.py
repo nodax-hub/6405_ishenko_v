@@ -53,6 +53,11 @@ def moving_average(data: pd.Series, window: int = 12) -> pd.Series:
     return data.rolling(window=window).mean()
 
 
+def moving_average_manual(data: pd.Series, window: int = 12) -> pd.Series:
+    return pd.Series(data=[sum(data[max(0, i - window):i].values) / window for i in range(len(data))],
+                     index=data.index)
+
+
 def differentiate(data: pd.Series) -> pd.Series:
     """
     Вычисляет дифференциал временного ряда.
@@ -101,6 +106,7 @@ def analyze_trend_and_save(data: pd.DataFrame,
     result_data = data.copy()
 
     result_data['moving_average'] = moving_average(result_data['Python'], window=moving_average_window)
+    result_data['moving_average_manual'] = moving_average_manual(result_data['Python'], window=moving_average_window)
     result_data['differential'] = differentiate(result_data['Python'])
     result_data['auto_correlation'] = auto_correlation(result_data['Python'], lag=auto_correlation_lag)
 
