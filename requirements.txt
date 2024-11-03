@@ -1,2 +1,8 @@
 pandas~=2.2.3
 pytrends~=4.9.2
+PyQt6~=6.7.1
+meteostat~=1.6.8
+yfinance~=0.2.48
+logging~=0.4.9.6
+colorlog~=6.9.0
+requests~=2.32.3
