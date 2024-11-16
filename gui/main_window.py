@@ -1,3 +1,4 @@
+import datetime
 import logging
 from functools import partial
 
@@ -39,7 +40,8 @@ class MainWindow(QMainWindow):
 
         self.keyword_input = QLineEdit()
         self.start_date_edit = QDateEdit(calendarPopup=True)
-        self.start_date_edit.setDate(QDate.currentDate().addDays(-1))
+        default_days = 30
+        self.start_date_edit.setDate(QDate.currentDate().addDays(-default_days))
         self.end_date_edit = QDateEdit(calendarPopup=True)
         self.end_date_edit.setDate(QDate.currentDate())
 
@@ -48,8 +50,8 @@ class MainWindow(QMainWindow):
 
         self.interval_input = QSpinBox()
         self.interval_input.setMinimum(1)
-        self.interval_input.setMaximum(86400)  # Максимум 24 часа
-        self.interval_input.setValue(60)
+        self.interval_input.setMaximum(default_days * 24 * 60 * 60)  # Максимум 30 дней
+        self.interval_input.setValue(default_days * 24 * 60 * 60)
         self.interval_input.setSuffix(" сек")
 
         self.view_data_button = QPushButton("Просмотреть данные")
@@ -70,7 +72,7 @@ class MainWindow(QMainWindow):
         # Создание таблицы для отображения активных сервисов
         self.services_table = QTableWidget()
         self.services_table.setColumnCount(5)
-        self.services_table.setMaximumWidth(550)
+        # self.services_table.setMaximumWidth(600)
         self.services_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.services_table.setHorizontalHeaderLabels(["Домен", "Ключевое слово", "Статус", "Интервал", "Действия"])
         self.services_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
@@ -134,6 +136,7 @@ class MainWindow(QMainWindow):
         if not selected_rows:
             QMessageBox.warning(self, "Предупреждение", "Пожалуйста, выберите сервис из таблицы.")
             return
+
         selected_row = selected_rows[0].row()
         selected_service = self._services[selected_row]
 
@@ -144,8 +147,10 @@ class MainWindow(QMainWindow):
         start_date = self.start_date_edit.date().toPyDate()
         end_date = self.end_date_edit.date().toPyDate()
 
+        start_time = datetime.datetime.combine(start_date, datetime.datetime.min.time())
+        end_time = datetime.datetime.combine(end_date, datetime.datetime.max.time())
         try:
-            data_points = get_data_points(domain.value, keyword, start_date, end_date)
+            data_points = get_data_points(domain.value, keyword, start_time, end_time)
             if not data_points:
                 QMessageBox.information(self, "Информация", "Нет данных для выбранного сервиса в указанном периоде.")
                 return
@@ -202,38 +207,6 @@ class MainWindow(QMainWindow):
         analyze = self.analyze_checkbox.isChecked()
         self.update_graph(analyze)
 
-    def show_visualization(self, data_points, ma=None, diff=None, extrema=None):
-        df = pd.DataFrame([{'timestamp': dp.timestamp, 'value': dp.value} for dp in data_points])
-        df.set_index('timestamp', inplace=True)
-
-        plt.figure(figsize=(10, 5))
-        plt.plot(df['value'], label='Original Data')
-
-        if ma is not None:
-            plt.plot(ma, label='Moving Average')
-
-        if extrema is not None:
-            plt.scatter(extrema.index, extrema['min'], color='red', label='Minima')
-            plt.scatter(extrema.index, extrema['max'], color='green', label='Maxima')
-
-        plt.legend()
-        plt.title('Data Visualization')
-        plt.xlabel('Time')
-        plt.ylabel('Value')
-
-        # Отображение графика в новом окне
-        fig = plt.gcf()
-        canvas = FigureCanvas(fig)
-        visualization_window = QWidget()
-        layout = QVBoxLayout()
-        layout.addWidget(canvas)
-        visualization_window.setLayout(layout)
-        visualization_window.setWindowTitle('Data Visualization')
-        visualization_window.show()
-
-        # Сохраняем ссылку на окно, чтобы оно не было уничтожено
-        self.visualization_windows.append(visualization_window)
-
     def _save_data_to_db(self, domain, keyword, data_points):
         session = Session()
         data_models = [
@@ -247,10 +220,6 @@ class MainWindow(QMainWindow):
     def load_monitoring_services(self):
         services = MonitoringService.load_services()
         self._services.extend(services)
-        # Убираем повторный запуск сервисов
-        # for service in self._services:
-        #     if service.status() == "Running":
-        #         service.start()
         self.update_services_table()
 
     def show_errors(self):
@@ -260,11 +229,6 @@ class MainWindow(QMainWindow):
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
-    def write(self, message):
-        self.error_log.append(message)
-
-    def flush(self):
-        pass
 
     def update_graph(self, analyze):
         if not hasattr(self, 'current_data_points') or not self.current_data_points:
@@ -274,7 +238,7 @@ class MainWindow(QMainWindow):
 
         self.figure.clear()
         ax = self.figure.add_subplot(111)
-        ax.plot(df['value'], label='Original Data')
+        ax.plot(df['value'], '-', label='Original Data')
 
         if analyze:
             ma = moving_average(self.current_data_points, window_size=5)

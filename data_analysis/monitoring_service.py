@@ -37,9 +37,11 @@ class MonitoringService:
                     retries = 3
                     for attempt in range(retries):
                         try:
-                            now = datetime.datetime.now()
+                            start_time = datetime.datetime.now() - datetime.timedelta(seconds=self.interval)
+                            end_time = datetime.datetime.now()
                             data = self.fetcher.fetch_data(self.keyword,
-                                                           now - datetime.timedelta(seconds=self.interval), now)
+                                                           start_time,
+                                                           end_time)
                             self.data_points.extend(data)
                             self._save_data(data)
                             self.last_error = None
@@ -47,7 +49,7 @@ class MonitoringService:
                         except Exception as e:
                             self.last_error = str(e)
                             logger.warning(
-                                f"Ошибка при получении данных для {self.keyword} (попытка {attempt + 1}/{retries}): {e}")
+                                f"error while receiving data for {self.keyword} (попытка {attempt + 1}/{retries}): {e}")
                             time.sleep(5)  # Ожидание перед повторной попыткой
                     else:
                         logger.error(f"Не удалось получить данные для {self.keyword} после {retries} попыток.")
@@ -57,7 +59,10 @@ class MonitoringService:
     def _save_data(self, data: list[DataPoint]):
         session = Session()
         data_models = [
-            DataPointModel(domain=self.domain.value, keyword=self.keyword, timestamp=dp.timestamp, value=dp.value)
+            DataPointModel(domain=self.domain.value,
+                           keyword=self.keyword,
+                           timestamp=dp.timestamp,
+                           value=dp.value)
             for dp in data
         ]
         session.add_all(data_models)

@@ -13,3 +13,4 @@ class DataDomain(StrEnum):
     STOCKS = 'Цены на акции'
     WEATHER = 'Погода'
     TRENDS = 'Поисковые тренды'
+    FAKE_DATA = 'Фейковые данные'

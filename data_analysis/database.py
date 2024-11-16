@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 
 from sqlalchemy import (
     create_engine, Column, Integer, Float, DateTime, String, Boolean
@@ -34,13 +34,13 @@ class MonitoringServiceModel(Base):
 Base.metadata.create_all(engine)
 
 
-def get_data_points(domain: str, keyword: str, start_date: datetime, end_date: datetime):
+def get_data_points(domain: str, keyword: str, start_time: datetime.datetime, end_time: datetime.datetime):
     session = Session()
     query = session.query(DataPointModel).filter(
         DataPointModel.domain == domain,
         DataPointModel.keyword == keyword,
-        DataPointModel.timestamp >= start_date,
-        DataPointModel.timestamp <= end_date
+        DataPointModel.timestamp >= start_time,
+        DataPointModel.timestamp <= end_time
     )
     data_models = query.all()
     session.close()
