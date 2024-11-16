@@ -1,2 +1,10 @@
-pandas~=2.2.3
-pytrends~=4.9.2
+# requirements.txt
+PyQt6
+pandas
+yfinance
+meteostat
+pytrends
+openpyxl
+geopy
+matplotlib
+SQLAlchemy
