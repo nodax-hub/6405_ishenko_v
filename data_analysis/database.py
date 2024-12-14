@@ -1,4 +1,5 @@
 import datetime
+from functools import lru_cache
 
 from sqlalchemy import (
     create_engine, Column, Integer, Float, DateTime, String, Boolean
@@ -33,7 +34,7 @@ class MonitoringServiceModel(Base):
 
 Base.metadata.create_all(engine)
 
-
+@lru_cache()
 def get_data_points(domain: str, keyword: str, start_time: datetime.datetime, end_time: datetime.datetime):
     session = Session()
     query = session.query(DataPointModel).filter(
