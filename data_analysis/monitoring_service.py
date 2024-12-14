@@ -21,7 +21,6 @@ class MonitoringService:
         self._running = False
         self._paused = False
         self._lock = threading.Lock()
-        self.data_points: list[DataPoint] = []
         self.last_error = None
 
     def start(self):
@@ -42,7 +41,6 @@ class MonitoringService:
                             data = self.fetcher.fetch_data(self.keyword,
                                                            start_time,
                                                            end_time)
-                            self.data_points.extend(data)
                             self._save_data(data)
                             self.last_error = None
                             break  # Успешно получили данные, выходим из цикла повторов
