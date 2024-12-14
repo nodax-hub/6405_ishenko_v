@@ -10,5 +10,6 @@ log_file_path.mkdir(exist_ok=True)
 
 if not logging.getLogger().hasHandlers():
     logging.config.fileConfig(str(config_path),
+                              encoding='utf-8',
                               disable_existing_loggers=False,
                               defaults={'path_to_logs': log_file_path.as_posix()})
